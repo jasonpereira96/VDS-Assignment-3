@@ -47,6 +47,17 @@ function printStats(data) {
     
 
     console.log(min(x), max(x));
+
+    let conc = data.map(d => d.concentration);
+    let s = new Set(conc);
+
+    let c = [];
+    for (const v of s.values()) {
+        c.push(v);
+    }
+    c.sort((a, b) => b- a);
+
+    console.log(c);
 }
 
 
@@ -72,15 +83,15 @@ const color1 = new THREE.Color();
 const createParticleSystem = (data) => {
 
     var color = d3.scaleSequential()
-        .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
-        // .domain([min(data.map(d => d.concentration)), max(data.map(d => d.concentration))])
+        // .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
+        .domain([min(data.map(d => d.concentration)), max(data.map(d => d.concentration))])
         // .range(["brown", "steelblue"])
         .interpolator(d3.interpolatePuRd);
 
     window.c = color;
     let c = rgbScale(color);
 
-    printStats(data);
+    // printStats(data);
     // draw your particle system here!
     // const geometry = new THREE.BufferGeometry();
     // const vertices = [];
@@ -101,13 +112,14 @@ const createParticleSystem = (data) => {
     let colors = [];
     for (const datum of data) {
         vertices.push(datum.X*f, datum.Y*f, datum.Z*f);
-        let c1 = new THREE.Color(color(datum.Z));
+        // let c1 = new THREE.Color(color(datum.Z));
+        let c1 = new THREE.Color(color(datum.concentration));
         // console.log(r, g, b);
         // colors.push(color1.r,color1.g, color1.b);
         // colors.push(0,256,0);
         colors.push(c1.r, c1.g, c1.b);
     }
-    console.log(colors);
+    // console.log(colors);
 
 
     // vertices = vertices.slice(0, 30);
@@ -125,7 +137,9 @@ const createParticleSystem = (data) => {
     points = new THREE.Points( geometry, material );
 
     scene.add( points );
-    animate();
+    // animate();
+    render();
+    createChart();
 };
 
 const loadData = (file) => {
@@ -171,3 +185,12 @@ const loadData = (file) => {
 
 
 loadData('data/058.csv');
+
+function createChart() {
+    let scatterData = data.map(d => {
+        return {
+            x: d.X, y: d.Y
+        };
+    });
+    scatterPlot(scatterData.slice(0, 15), {});
+}

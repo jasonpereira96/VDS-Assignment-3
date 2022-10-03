@@ -30,7 +30,7 @@ window.addEventListener('resize', () =>
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000 );
-camera.position.set(0,2,20);
+camera.position.set(10,2,20);
 camera.lookAt(0,0,0);
 scene.add(camera);
 
@@ -46,14 +46,25 @@ renderer.setClearColor(0x000000);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 
+const controls = new OrbitControls( camera, renderer.domElement);
+controls.addEventListener( 'change', render );
+controls.minDistance = 20;
+controls.maxDistance = 50;
+controls.maxPolarAngle = Math.PI / 2;
+
+
+function render() {
+    renderer.render(scene, camera);
+}
+
 // Animate
 const animate = () =>
 {
     renderer.render(scene, camera);
 
-    points.rotation.x += 0.01;
-    points.rotation.y += 0.01;
+    // points.rotation.x += 0.01;
+    // points.rotation.y += 0.01;
 
     // Call animate for each frame
-    window.requestAnimationFrame(animate);
+    // window.requestAnimationFrame(animate);
 };
