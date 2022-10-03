@@ -58,8 +58,7 @@ function render() {
 }
 
 // Animate
-const animate = () =>
-{
+function animate() {
     renderer.render(scene, camera);
 
     // points.rotation.x += 0.01;

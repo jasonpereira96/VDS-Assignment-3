@@ -4,7 +4,7 @@ function scatterPlot(data, options) {
 
     const sidebar =  document.getElementById("sidebar");
     const width = sidebar.clientWidth;
-    const height = sidebar.clientHeight;
+    const height = Math.min(sidebar.clientHeight, 650);
 
     const x = d3.scaleLinear()
         .domain(d3.extent(data, d => d.x)).nice()
@@ -40,8 +40,8 @@ function scatterPlot(data, options) {
         .attr("viewBox", [0, 0, width, height])
         .property("value", []);
 
-    const brush = d3.brush()
-        .on("start brush end", brushed);
+    // const brush = d3.brush()
+    //     .on("start brush end", brushed);
 
     svg.append("g")
         .call(xAxis);
@@ -59,7 +59,7 @@ function scatterPlot(data, options) {
         .attr("transform", d => `translate(${x(d.x)},${y(d.y)})`)
         .attr("r", 3);
 
-    svg.call(brush);
+    // svg.call(brush);
 
     function brushed({ selection }) {
         let value = [];
@@ -75,7 +75,9 @@ function scatterPlot(data, options) {
         }
         svg.property("value", value).dispatch("input");
     }
-
+    while (sidebar.firstChild) {
+        sidebar.removeChild(sidebar.lastChild);
+    }
     sidebar.append(svg.node());
 
     return svg.node();

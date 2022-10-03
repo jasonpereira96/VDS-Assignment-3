@@ -21,24 +21,6 @@ function max(array) {
     return r;
 }
 
-function _getRGB(string) {
-    let s = string.replace(/r|g|b|\(|\)/g, "").split(",");
-    return {
-        r: Number(s[0]),
-        g: Number(s[1]),
-        b: Number(s[2])
-    };
-}
-
-function rgbScale(colorScale) {
-    return function (value) {
-        let {r, g, b} = _getRGB(colorScale(value));
-        return {
-            r, g, b
-        };
-    };
-}
-
 
 function printStats(data) {
     let x = data.map(r => r.X);
@@ -61,23 +43,18 @@ function printStats(data) {
 }
 
 
-// create the containment box.
-// This cylinder is only to guide development.
-// TODO: Remove after the data has been rendered
-const createCylinder = () => {
-    // get the radius and height based on the data bounds
-    const radius = (bounds.maxX - bounds.minX) / 2.0 + 1;
-    const height = (bounds.maxY - bounds.minY) + 1;
 
-    // create a cylinder to contain the particle system
-    const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
-    const cylinder = new THREE.Mesh(geometry, material);
 
-    // add the containment to the scene
-    scene.add(cylinder);
+const createFilter = () => {
+    const geometry = new THREE.BoxGeometry(10, 10, 0.1);
+    const material = new THREE.MeshBasicMaterial( {color: 0xFFD700, transparent: true, opacity: 0.5} );
+    const cube = new THREE.Mesh( geometry, material);
+    scene.add(cube);
+    window.cube = cube;
+    return cube;
 };
-const f = 1;
+
+const f = 1.2;
 const color1 = new THREE.Color();
 // creates the particle system
 const createParticleSystem = (data) => {
@@ -85,11 +62,12 @@ const createParticleSystem = (data) => {
     var color = d3.scaleSequential()
         // .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
         .domain([min(data.map(d => d.concentration)), max(data.map(d => d.concentration))])
+        // .domain([min(data.map(d => d.concentration)), 10])
+        // .domain([min(data.map(d => d.concentration)), 3])
+
         // .range(["brown", "steelblue"])
         .interpolator(d3.interpolatePuRd);
 
-    window.c = color;
-    let c = rgbScale(color);
 
     // printStats(data);
     // draw your particle system here!
@@ -99,15 +77,6 @@ const createParticleSystem = (data) => {
     // const sprite = new THREE.TextureLoader().load('textures/sprites/disc.png');
 
     
-    /*let vertices = [
-        -1.0, -1.0,  -1.0,
-        -1.0, -1.0,  1.0,
-        -1.0,  1.0,  -1.0,
-    
-        1.0,  -1.0,  1.0,
-        1.0,  1.0,  -1.0,
-        1.0, 1.0,  1.0
-    ];*/
     let vertices = [];
     let colors = [];
     for (const datum of data) {
@@ -139,7 +108,7 @@ const createParticleSystem = (data) => {
     scene.add( points );
     // animate();
     render();
-    createChart();
+    renderChart(data.filter(d => d.Z === 0));
 };
 
 const loadData = (file) => {
@@ -175,22 +144,43 @@ const loadData = (file) => {
         });
         // draw the containment cylinder
         // TODO: Remove after the data has been rendered
-        // createCylinder()
         // create the particle system
         createParticleSystem(data);
-    })
-
-
+        createFilter();
+        initializeControls();
+    });
 };
 
 
 loadData('data/058.csv');
 
-function createChart() {
-    let scatterData = data.map(d => {
+function renderChart(records) {
+    let scatterData = records.map(d => {
         return {
             x: d.X, y: d.Y
         };
     });
-    scatterPlot(scatterData.slice(0, 15), {});
+    scatterPlot(scatterData, {});
+}
+
+function initializeControls() {
+    const slider = document.getElementById('slider');
+    let sliderMin = min(data.map(d => d.Z));
+    let sliderMax = max(data.map(d => d.Z));
+    slider.min = sliderMin;
+    slider.max = sliderMax;
+    slider.value = sliderMin;
+    slider.addEventListener("input", onSliderChange);
+}
+
+function onSliderChange(e) {
+    let value = Number(e.srcElement.value);
+    const EPSILON = 0.01;
+    let minBound = value - EPSILON;
+    let maxBound = value + EPSILON;
+    renderChart(data.filter(d => minBound <= d.Z && d.Z <= maxBound));
+
+    window.cube.position.z = value;
+    requestAnimationFrame(render);
+
 }
