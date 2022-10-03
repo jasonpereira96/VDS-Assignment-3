@@ -1,7 +1,54 @@
 var data = [];
-
+var points;
 // bounds of the data
 const bounds = {};
+
+
+
+function min(array) {
+    let r = 9999;
+    for (let v of array) {
+        r = Math.min(r, v);
+    }
+    return r;
+}
+
+function max(array) {
+    let r = -9999;
+    for (let v of array) {
+        r = Math.max(r, v);
+    }
+    return r;
+}
+
+function _getRGB(string) {
+    let s = string.replace(/r|g|b|\(|\)/g, "").split(",");
+    return {
+        r: Number(s[0]),
+        g: Number(s[1]),
+        b: Number(s[2])
+    };
+}
+
+function rgbScale(colorScale) {
+    return function (value) {
+        let {r, g, b} = _getRGB(colorScale(value));
+        return {
+            r, g, b
+        };
+    };
+}
+
+
+function printStats(data) {
+    let x = data.map(r => r.X);
+    let y = data.map(r => r.Y);
+    let z = data.map(r => r.Z);
+    
+
+    console.log(min(x), max(x));
+}
+
 
 // create the containment box.
 // This cylinder is only to guide development.
@@ -19,10 +66,66 @@ const createCylinder = () => {
     // add the containment to the scene
     scene.add(cylinder);
 };
-
+const f = 1;
+const color1 = new THREE.Color();
 // creates the particle system
 const createParticleSystem = (data) => {
+
+    var color = d3.scaleSequential()
+        .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
+        // .domain([min(data.map(d => d.concentration)), max(data.map(d => d.concentration))])
+        // .range(["brown", "steelblue"])
+        .interpolator(d3.interpolatePuRd);
+
+    window.c = color;
+    let c = rgbScale(color);
+
+    printStats(data);
     // draw your particle system here!
+    // const geometry = new THREE.BufferGeometry();
+    // const vertices = [];
+
+    // const sprite = new THREE.TextureLoader().load('textures/sprites/disc.png');
+
+    
+    /*let vertices = [
+        -1.0, -1.0,  -1.0,
+        -1.0, -1.0,  1.0,
+        -1.0,  1.0,  -1.0,
+    
+        1.0,  -1.0,  1.0,
+        1.0,  1.0,  -1.0,
+        1.0, 1.0,  1.0
+    ];*/
+    let vertices = [];
+    let colors = [];
+    for (const datum of data) {
+        vertices.push(datum.X*f, datum.Y*f, datum.Z*f);
+        let c1 = new THREE.Color(color(datum.Z));
+        // console.log(r, g, b);
+        // colors.push(color1.r,color1.g, color1.b);
+        // colors.push(0,256,0);
+        colors.push(c1.r, c1.g, c1.b);
+    }
+    console.log(colors);
+
+
+    // vertices = vertices.slice(0, 30);
+    vertices = new Float32Array(vertices);
+
+    // const sizes = new Float32Array([2,2,2,2,2,2,2,2,2]);
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ));
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3));
+
+
+    const material = new THREE.PointsMaterial( { size: 0.02, vertexColors: true } );
+
+    points = new THREE.Points( geometry, material );
+
+    scene.add( points );
+    animate();
 };
 
 const loadData = (file) => {
@@ -45,7 +148,7 @@ const loadData = (file) => {
             // add the element to the data collection
             data.push({
                 // concentration density
-                concentration: Number(d.concentration),
+                concentration: Number(d.concentration) * 10000,
                 // Position
                 X: Number(d.Points0),
                 Y: Number(d.Points1),
@@ -58,9 +161,9 @@ const loadData = (file) => {
         });
         // draw the containment cylinder
         // TODO: Remove after the data has been rendered
-        createCylinder()
+        // createCylinder()
         // create the particle system
-        // createParticleSystem(data);
+        createParticleSystem(data);
     })
 
 

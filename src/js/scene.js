@@ -51,8 +51,9 @@ const animate = () =>
 {
     renderer.render(scene, camera);
 
+    points.rotation.x += 0.01;
+    points.rotation.y += 0.01;
+
     // Call animate for each frame
     window.requestAnimationFrame(animate);
 };
-
-animate();
