@@ -3,10 +3,10 @@ var points;
 // bounds of the data
 const bounds = {};
 
-
+let _color;
 
 function min(array) {
-    let r = 9999;
+    let r = Infinity;
     for (let v of array) {
         r = Math.min(r, v);
     }
@@ -26,9 +26,11 @@ function printStats(data) {
     let x = data.map(r => r.X);
     let y = data.map(r => r.Y);
     let z = data.map(r => r.Z);
+    let c1 = data.map(r => r.concentration);
+
     
 
-    console.log(min(x), max(x));
+    console.log(min(c1), max(c1));
 
     let conc = data.map(d => d.concentration);
     let s = new Set(conc);
@@ -59,15 +61,21 @@ const color1 = new THREE.Color();
 // creates the particle system
 const createParticleSystem = (data) => {
 
+    let filteredData = data.slice();
+    filteredData = filteredData.filter(r => r.concentration < Infinity)
+
+    const domainMin = min(filteredData.map(d => d.concentration));
+    const domainMax = Math.min(max(filteredData.map(d => d.concentration)), 300000);
     var color = d3.scaleSequential()
         // .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
-        .domain([min(data.map(d => d.concentration)), max(data.map(d => d.concentration))])
+        .domain([domainMin, domainMax])
         // .domain([min(data.map(d => d.concentration)), 10])
         // .domain([min(data.map(d => d.concentration)), 3])
 
         // .range(["brown", "steelblue"])
         .interpolator(d3.interpolatePuRd);
 
+    _color = color;
 
     // printStats(data);
     // draw your particle system here!
@@ -79,7 +87,8 @@ const createParticleSystem = (data) => {
     
     let vertices = [];
     let colors = [];
-    for (const datum of data) {
+    
+    for (const datum of filteredData) {
         vertices.push(datum.X*f, datum.Y*f, datum.Z*f);
         // let c1 = new THREE.Color(color(datum.Z));
         let c1 = new THREE.Color(color(datum.concentration));
@@ -108,7 +117,9 @@ const createParticleSystem = (data) => {
     scene.add( points );
     // animate();
     render();
-    renderChart(data.filter(d => d.Z === 0));
+    renderChart(filteredData.filter(d => d.Z === 0), color);
+    renderLegend(filteredData, color);
+    printStats(filteredData);
 };
 
 const loadData = (file) => {
@@ -126,7 +137,7 @@ const loadData = (file) => {
             // get the max bounds
             bounds.maxX = Math.max(bounds.maxX || -Infinity, d.Points0);
             bounds.maxY = Math.max(bounds.maxY || -Infinity, d.Points1);
-            bounds.maxZ = Math.max(bounds.maxY || -Infinity, d.Points2);
+            bounds.maxZ = Math.max(bounds.maxZ || -Infinity, d.Points2);
 
             // add the element to the data collection
             data.push({
@@ -154,13 +165,15 @@ const loadData = (file) => {
 
 loadData('data/058.csv');
 
-function renderChart(records) {
+function renderChart(records, color) {
     let scatterData = records.map(d => {
         return {
-            x: d.X, y: d.Y
+            x: d.X, y: d.Y, concentration: d.concentration, z: d.Z
         };
     });
-    scatterPlot(scatterData, {});
+    scatterPlot(scatterData, {
+        color
+    });
 }
 
 function initializeControls() {
@@ -178,9 +191,20 @@ function onSliderChange(e) {
     const EPSILON = 0.01;
     let minBound = value - EPSILON;
     let maxBound = value + EPSILON;
-    renderChart(data.filter(d => minBound <= d.Z && d.Z <= maxBound));
+    renderChart(data.filter(d => minBound <= d.Z && d.Z <= maxBound), _color);
 
-    window.cube.position.z = value;
+    window.cube.position.z = value * f;
     requestAnimationFrame(render);
 
+    document.getElementById("z-index-label").textContent = `Z index: ${value}`;
+
+}
+
+function renderLegend(data, color) {
+    const options = {
+        color,
+        title: "Concentration"
+    }
+    let svgNode = legend(options);
+    document.getElementById("legend-wrapper").append(svgNode);
 }

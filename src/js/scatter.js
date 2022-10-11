@@ -2,9 +2,11 @@ function scatterPlot(data, options) {
 
     const margin = ({top: 20, right: 30, bottom: 30, left: 40})
 
+    const color = options.color;
+
     const sidebar =  document.getElementById("sidebar");
     const width = sidebar.clientWidth;
-    const height = Math.min(sidebar.clientHeight, 650);
+    const height = Math.min(sidebar.clientHeight, 550);
 
     const x = d3.scaleLinear()
         .domain(d3.extent(data, d => d.x)).nice()
@@ -49,13 +51,20 @@ function scatterPlot(data, options) {
     svg.append("g")
         .call(yAxis);
 
+    function getColor(d) {
+        // if (d.z > 9.5) {
+        //     return "steelblue";
+        // }
+        return color(d.concentration);
+    }
+
     const dot = svg.append("g")
-        .attr("fill", "none")
-        .attr("stroke", "steelblue")
         .attr("stroke-width", 1.5)
         .selectAll("circle")
         .data(data)
         .join("circle")
+        .attr("stroke", getColor)
+        .attr("fill", getColor)
         .attr("transform", d => `translate(${x(d.x)},${y(d.y)})`)
         .attr("r", 3);
 
