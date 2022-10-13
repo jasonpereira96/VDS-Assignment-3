@@ -5,7 +5,7 @@ const bounds = {};
 let checkbox;
 const f = 1.2;
 const EPSILON = 0.01;
-const brushWidth = 50;
+const brushWidth = 30;
 const DEBOUNCE_DELAY = 150;
 window.geometry = null;
 

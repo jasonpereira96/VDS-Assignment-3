@@ -1,5 +1,6 @@
 body {
     background-color: lightgray;
+    margin: 0;
 }
 
 .row {
@@ -8,4 +9,26 @@ body {
 
 #sidebar {
     flex: 1;
+}
+
+#z-index-label, #legend-wrapper, .row, h1 {
+    padding: 10px;
+}
+
+h1 {
+    color: white;
+    background-color: #7C0D0E;
+    margin: 0;
+}
+
+.slider-wrapper, .brush-wrapper {
+    padding: 10px;
+}
+#legend-wrapper {
+    flex: 1;
+    padding: 10px;
+}
+
+.row.controls {
+    padding-top: 0;
 }
