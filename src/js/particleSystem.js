@@ -2,6 +2,12 @@ var data = [];
 var points;
 // bounds of the data
 const bounds = {};
+let checkbox;
+const f = 1.2;
+const EPSILON = 0.01;
+const brushWidth = 50;
+const DEBOUNCE_DELAY = 150;
+window.geometry = null;
 
 let _color;
 
@@ -56,8 +62,6 @@ const createFilter = () => {
     return cube;
 };
 
-const f = 1.2;
-const color1 = new THREE.Color();
 // creates the particle system
 const createParticleSystem = (data) => {
 
@@ -65,24 +69,14 @@ const createParticleSystem = (data) => {
     filteredData = filteredData.filter(r => r.concentration < Infinity)
 
     const domainMin = min(filteredData.map(d => d.concentration));
-    const domainMax = Math.min(max(filteredData.map(d => d.concentration)), 300000);
+    const domainMax = Math.min(max(filteredData.map(d => d.concentration)), 30);
     var color = d3.scaleSequential()
-        // .domain([min(data.map(d => d.Z)), max(data.map(d => d.Z))])
         .domain([domainMin, domainMax])
-        // .domain([min(data.map(d => d.concentration)), 10])
-        // .domain([min(data.map(d => d.concentration)), 3])
-
-        // .range(["brown", "steelblue"])
         .interpolator(d3.interpolatePuRd);
 
     _color = color;
 
-    // printStats(data);
-    // draw your particle system here!
-    // const geometry = new THREE.BufferGeometry();
-    // const vertices = [];
-
-    // const sprite = new THREE.TextureLoader().load('textures/sprites/disc.png');
+   
 
     
     let vertices = [];
@@ -108,6 +102,7 @@ const createParticleSystem = (data) => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ));
     geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3));
+    window.geometry = geometry;
 
 
     const material = new THREE.PointsMaterial( { size: 0.02, vertexColors: true } );
@@ -142,7 +137,7 @@ const loadData = (file) => {
             // add the element to the data collection
             data.push({
                 // concentration density
-                concentration: Number(d.concentration) * 10000,
+                concentration: Number(d.concentration) * 1,
                 // Position
                 X: Number(d.Points0),
                 Y: Number(d.Points1),
@@ -158,6 +153,7 @@ const loadData = (file) => {
         // create the particle system
         createParticleSystem(data);
         createFilter();
+        requestAnimationFrame(render);
         initializeControls();
     });
 };
@@ -183,21 +179,29 @@ function initializeControls() {
     slider.min = sliderMin;
     slider.max = sliderMax;
     slider.value = sliderMin;
-    slider.addEventListener("input", onSliderChange);
+    slider.addEventListener("input", _.debounce(onSliderChange, DEBOUNCE_DELAY));
+
+    checkbox = document.getElementById("brush-checkbox");
+    checkbox.addEventListener("change", onBrushCheck);
 }
 
 function onSliderChange(e) {
     let value = Number(e.srcElement.value);
-    const EPSILON = 0.01;
     let minBound = value - EPSILON;
     let maxBound = value + EPSILON;
     renderChart(data.filter(d => minBound <= d.Z && d.Z <= maxBound), _color);
 
     window.cube.position.z = value * f;
+    brush(checkbox.checked);
     requestAnimationFrame(render);
 
     document.getElementById("z-index-label").textContent = `Z index: ${value}`;
 
+}
+
+function onBrushCheck(e) {
+    brush(checkbox.checked);
+    requestAnimationFrame(render);
 }
 
 function renderLegend(data, color) {
@@ -207,4 +211,31 @@ function renderLegend(data, color) {
     }
     let svgNode = legend(options);
     document.getElementById("legend-wrapper").append(svgNode);
+}
+
+function brush(isBrushActive) {
+    let filteredData = data.slice();
+    filteredData = filteredData.filter(r => r.concentration < Infinity);
+
+    let colors = [];
+
+    const value = window.cube.position.z / f;
+    let minBound = value - EPSILON * brushWidth;
+    let maxBound = value + EPSILON * brushWidth;
+    
+    for (const datum of filteredData) {
+        if (isBrushActive) {
+            if (minBound <= datum.Z && datum.Z <= maxBound) {
+                let c1 = new THREE.Color(_color(datum.concentration));
+                colors.push(c1.r, c1.g, c1.b);
+            }  else {
+                let c2 = new THREE.Color(`rgb(${105}, ${105}, ${105})`);
+                colors.push(c2.r, c2.g, c2.b);
+            }    
+        } else {
+            let c1 = new THREE.Color(_color(datum.concentration));
+            colors.push(c1.r, c1.g, c1.b);
+        }
+    }
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3));
 }

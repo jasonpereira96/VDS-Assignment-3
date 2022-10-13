@@ -29,7 +29,7 @@ window.addEventListener('resize', () =>
 
 
 // Camera setup
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
 camera.position.set(10,2,20);
 camera.lookAt(0,0,0);
 scene.add(camera);
@@ -47,7 +47,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 
 const controls = new OrbitControls( camera, renderer.domElement);
-controls.addEventListener( 'change', render );
+controls.addEventListener( 'change', () => {
+    requestAnimationFrame(render);
+});
 controls.minDistance = 20;
 controls.maxDistance = 50;
 controls.maxPolarAngle = Math.PI / 2;
